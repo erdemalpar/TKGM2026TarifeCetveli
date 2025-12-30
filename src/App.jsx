@@ -175,7 +175,7 @@ const App = () => {
                 // Görsel uyarıyı tetikle
                 setHighlightLocation(true);
                 // 3 saniye sonra efekti kapat (3 saniyede 3 kere yanıp sönmesi için)
-                setTimeout(() => setHighlightLocation(false), 3000);
+                setTimeout(() => setHighlightLocation(false), 4000);
 
                 alert("Lütfen önce İl ve İlçe seçiniz.\n\nTapu ve Kadastro harçları bölgeye göre hesaplanmaktadır.");
                 return;
@@ -274,12 +274,20 @@ const App = () => {
     return (
         <div className="h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased flex flex-col overflow-hidden">
             <style>{`
-                @keyframes fast-pulse {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.3; }
+                @keyframes police-red {
+                    0%, 100% { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; box-shadow: 0 0 0 4px #fee2e2; }
+                    50% { background-color: #fff; border-color: #fca5a5; color: #ef4444; box-shadow: none; }
                 }
-                .animate-fast-pulse {
-                    animation: fast-pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+                @keyframes police-blue {
+                    0%, 100% { background-color: #dbeafe; border-color: #3b82f6; color: #1e40af; box-shadow: 0 0 0 4px #dbeafe; }
+                    50% { background-color: #fff; border-color: #93c5fd; color: #3b82f6; box-shadow: none; }
+                }
+                .animate-police-red {
+                    animation: police-red 0.5s ease-in-out infinite;
+                }
+                .animate-police-blue {
+                    animation: police-blue 0.5s ease-in-out infinite;
+                    animation-delay: 0.25s; /* Zıt zamanlı yanıp sönme */
                 }
             `}</style>
             {/* Header */}
@@ -317,9 +325,9 @@ const App = () => {
                     {/* İl/İlçe Seçimi ve Manuel Mod Göstergesi */}
                     <div className={`w-full border p-3 rounded-xl flex flex-col md:flex-row items-center gap-4 transition-colors duration-300 ${isManualMode ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-100'}`}>
                         <div className="flex items-center gap-2 w-full md:w-auto">
-                            <MapPin size={16} className={highlightLocation ? "text-red-500 animate-fast-pulse" : (isManualMode ? "text-amber-500" : "text-blue-500")} />
+                            <MapPin size={16} className={highlightLocation ? "text-red-500 animate-police-red" : (isManualMode ? "text-amber-500" : "text-blue-500")} />
                             <select
-                                className={`border text-sm rounded-lg p-2 outline-none transition-all duration-300 w-full md:w-auto ${highlightLocation ? 'bg-red-50 text-red-700 border-red-400 ring-4 ring-red-100 animate-fast-pulse' : (isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200')}`}
+                                className={`border text-sm rounded-lg p-2 outline-none transition-all duration-300 w-full md:w-auto ${highlightLocation ? 'animate-police-red' : (isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200')}`}
                                 value={selectedCity}
                                 onChange={handleCityChange}
                             >
@@ -329,7 +337,7 @@ const App = () => {
                         </div>
                         <div className="flex items-center gap-2 w-full md:w-auto">
                             <select
-                                className={`border text-sm rounded-lg p-2 outline-none transition-all duration-300 w-full md:w-auto ${highlightLocation ? 'bg-red-50 text-red-700 border-red-400 ring-4 ring-red-100 animate-fast-pulse' : (isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200 disabled:bg-slate-100')}`}
+                                className={`border text-sm rounded-lg p-2 outline-none transition-all duration-300 w-full md:w-auto ${highlightLocation ? 'animate-police-blue' : (isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200 disabled:bg-slate-100')}`}
                                 value={selectedDistrict}
                                 onChange={(e) => setSelectedDistrict(e.target.value)}
                                 disabled={!selectedCity}
