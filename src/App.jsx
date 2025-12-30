@@ -370,8 +370,16 @@ const App = () => {
 
             {/* Footer */}
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 z-40 shadow-lg">
-                <div className="max-w-6xl mx-auto flex justify-between items-center">
-                    <div><p className="text-[10px] font-bold text-slate-400 uppercase">Toplam Tahakkuk</p><p className="text-xs text-slate-500">KDV Dahil / 2026</p></div>
+                <div className="max-w-6xl mx-auto flex justify-between items-center relative">
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Toplam Tahakkuk</p>
+                        <p className="text-xs text-slate-500">KDV Dahil / 2026</p>
+                    </div>
+
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-300 hidden sm:block">
+                        design by <a href="https://github.com/erdemalpar" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-600 transition-colors font-bold">@erdemalpar</a>
+                    </div>
+
                     <div className="text-3xl font-black text-slate-900">{formatCurrency(processedTariffData.reduce((acc, sec) => acc + sec.items.reduce((sa, it) => sa + calculateTotal(it, quantities[it.code]), 0), 0))}</div>
                 </div>
             </div>
