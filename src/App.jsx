@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, FileText, ChevronDown, ChevronUp, AlertTriangle, MapPin, Database, X, Check, Copy, Upload, FileJson, Download, Table as TableIcon, Save, AlertCircle, ShoppingBag, Trash2 } from 'lucide-react';
+import { Search, FileText, ChevronDown, ChevronUp, AlertTriangle, MapPin, Database, X, Check, Copy, Upload, FileJson, Download, Table as TableIcon, Save, AlertCircle, ShoppingBag, Trash2, Info } from 'lucide-react';
 import rawDefaultData from './data/defaultYoreselKatSayilar';
 import { tariffData as rawTariffData } from './data/tariffData';
 
@@ -174,8 +174,8 @@ const App = () => {
             if (section && (section.id === 1 || section.id === 2)) {
                 // Görsel uyarıyı tetikle
                 setHighlightLocation(true);
-                // 2 saniye sonra efekti kapat
-                setTimeout(() => setHighlightLocation(false), 2000);
+                // 3 saniye sonra efekti kapat (3 saniyede 3 kere yanıp sönmesi için)
+                setTimeout(() => setHighlightLocation(false), 3000);
 
                 alert("Lütfen önce İl ve İlçe seçiniz.\n\nTapu ve Kadastro harçları bölgeye göre hesaplanmaktadır.");
                 return;
@@ -272,16 +272,36 @@ const App = () => {
     }, [searchTerm, processedTariffData]);
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased pb-28">
+        <div className="h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased flex flex-col overflow-hidden">
+            <style>{`
+                @keyframes fast-pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.3; }
+                }
+                .animate-fast-pulse {
+                    animation: fast-pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+                }
+            `}</style>
             {/* Header */}
-            <header className="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 py-4 shadow-sm">
+            <header className="bg-white border-b border-slate-200 flex-shrink-0 z-40 px-4 py-4 shadow-sm">
                 <div className="w-full px-[10px] py-4 space-y-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                             <div className="bg-blue-600 p-2 rounded-lg"><FileText className="text-white" size={24} /></div>
                             <div>
-                                <h1 className="text-xl font-extrabold tracking-tight text-slate-900 leading-none">TKGM 2026</h1>
-                                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter mt-1">Döner Sermaye Tarife Cetveli</p>
+                                <div className="flex items-center gap-2">
+                                    <h1 className="text-xl font-black tracking-tight text-slate-800">TKGM 2026</h1>
+                                    <a
+                                        href="https://www.tkgm.gov.tr/dsermaye-im/fiyat-listesi-yoresel-katsayilar"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="Resmi Dönersermaye Fiyat Listesi ve Yöresel Katsayılar Sayfasına Git"
+                                        className="text-blue-400 hover:text-blue-600 transition-colors"
+                                    >
+                                        <Info size={18} />
+                                    </a>
+                                </div>
+                                <p className="text-xs font-medium text-slate-500">Döner Sermaye Tarife Cetveli</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -297,9 +317,9 @@ const App = () => {
                     {/* İl/İlçe Seçimi ve Manuel Mod Göstergesi */}
                     <div className={`w-full border p-3 rounded-xl flex flex-col md:flex-row items-center gap-4 transition-colors duration-300 ${isManualMode ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-100'}`}>
                         <div className="flex items-center gap-2 w-full md:w-auto">
-                            <MapPin size={16} className={highlightLocation ? "text-red-500 animate-pulse" : (isManualMode ? "text-amber-500" : "text-blue-500")} />
+                            <MapPin size={16} className={highlightLocation ? "text-red-500 animate-fast-pulse" : (isManualMode ? "text-amber-500" : "text-blue-500")} />
                             <select
-                                className={`border text-sm rounded-lg p-2 outline-none transition-all duration-300 w-full md:w-auto ${highlightLocation ? 'bg-red-50 text-red-700 border-red-400 ring-4 ring-red-100' : (isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200')}`}
+                                className={`border text-sm rounded-lg p-2 outline-none transition-all duration-300 w-full md:w-auto ${highlightLocation ? 'bg-red-50 text-red-700 border-red-400 ring-4 ring-red-100 animate-fast-pulse' : (isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200')}`}
                                 value={selectedCity}
                                 onChange={handleCityChange}
                             >
@@ -309,7 +329,7 @@ const App = () => {
                         </div>
                         <div className="flex items-center gap-2 w-full md:w-auto">
                             <select
-                                className={`border text-sm rounded-lg p-2 outline-none transition-all duration-300 w-full md:w-auto ${highlightLocation ? 'bg-red-50 text-red-700 border-red-400 ring-4 ring-red-100' : (isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200 disabled:bg-slate-100')}`}
+                                className={`border text-sm rounded-lg p-2 outline-none transition-all duration-300 w-full md:w-auto ${highlightLocation ? 'bg-red-50 text-red-700 border-red-400 ring-4 ring-red-100 animate-fast-pulse' : (isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200 disabled:bg-slate-100')}`}
                                 value={selectedDistrict}
                                 onChange={(e) => setSelectedDistrict(e.target.value)}
                                 disabled={!selectedCity}
@@ -357,9 +377,9 @@ const App = () => {
             </header>
 
             {/* Liste ve Sepet */}
-            <div className="w-full mt-6 px-[30px] flex flex-col lg:flex-row gap-6 items-start">
-                {/* Sol Panel: Tarife Listesi */}
-                <main className="flex-1 space-y-4 w-full">
+            <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden mt-6 px-[30px]">
+                {/* Sol Panel: Tarife Listesi - Scrollable */}
+                <main className="flex-1 h-full overflow-y-auto pb-32 pr-2 custom-scrollbar space-y-4 w-full">
                     {filteredData.map(section => (
                         <div key={section.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                             <button onClick={() => toggleSection(section.id)} className="w-full px-6 py-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
@@ -392,15 +412,15 @@ const App = () => {
                     ))}
                 </main>
 
-                {/* Sağ Panel: Sepet (Sticky) */}
-                <aside className="w-full lg:w-96 flex-shrink-0 lg:sticky lg:top-24 space-y-4">
+                {/* Sağ Panel: Sepet - Sabit (Scrollable if needed) */}
+                <aside className="w-full lg:w-96 flex-shrink-0 h-full overflow-y-auto pb-32 custom-scrollbar space-y-4">
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                         <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 pb-2 border-b border-slate-100">
                             <ShoppingBag size={20} className="text-blue-600" />
                             <span>Hesaplama Özeti</span>
                         </h3>
 
-                        <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="space-y-4 mb-6">
                             {processedTariffData.flatMap(s => s.items).filter(i => quantities[i.code] > 0).length === 0 ? (
                                 <div className="text-center py-8 text-slate-400 text-sm">
                                     Sepetiniz boş.
@@ -435,14 +455,19 @@ const App = () => {
                         {processedTariffData.flatMap(s => s.items).some(i => quantities[i.code] > 0) && (
                             <div className="bg-slate-50 -mx-6 -mb-6 p-6 border-t border-slate-100 rounded-b-2xl">
                                 <div className="space-y-2 mb-4">
-                                    <div className="flex justify-between items-center text-xs text-slate-500">
-                                        <span>Tapu İşlemleri ({processedTariffData.find(s => s.id === 1)?.items.filter(i => quantities[i.code] > 0).length || 0})</span>
-                                        <span className="font-semibold">{formatCurrency(processedTariffData.find(s => s.id === 1)?.items.reduce((acc, item) => acc + calculateTotal(item, quantities[item.code] || 0), 0) || 0)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs text-slate-500">
-                                        <span>Kadastro İşlemleri ({processedTariffData.find(s => s.id === 2)?.items.filter(i => quantities[i.code] > 0).length || 0})</span>
-                                        <span className="font-semibold">{formatCurrency(processedTariffData.find(s => s.id === 2)?.items.reduce((acc, item) => acc + calculateTotal(item, quantities[item.code] || 0), 0) || 0)}</span>
-                                    </div>
+                                    {processedTariffData.map(section => {
+                                        const count = section.items.filter(i => quantities[i.code] > 0).length;
+                                        if (count === 0) return null;
+                                        const total = section.items.reduce((acc, item) => acc + calculateTotal(item, quantities[item.code] || 0), 0);
+                                        return (
+                                            <div key={section.id} className="flex justify-between items-center text-xs text-slate-500">
+                                                <span className="truncate max-w-[180px]" title={section.title}>
+                                                    {section.title.length > 25 ? section.title.substring(0, 25) + '...' : section.title} ({count})
+                                                </span>
+                                                <span className="font-semibold whitespace-nowrap">{formatCurrency(total)}</span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                                 <div className="flex justify-between items-center pt-4 border-t border-slate-200">
                                     <span className="font-bold text-slate-700">Genel Toplam</span>
