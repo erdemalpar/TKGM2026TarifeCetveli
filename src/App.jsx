@@ -58,6 +58,7 @@ const App = () => {
     // coefficientType removed, logic is now automatic per section
     const [expandedSections, setExpandedSections] = useState({});
     const [quantities, setQuantities] = useState({});
+    const [itemCoefficients, setItemCoefficients] = useState({});
     const [highlightLocation, setHighlightLocation] = useState(false);
 
     // Manuel Mod Kontrolü: 1 (Tapu) ve 2 (Kadastro) dışındaki bölümlerden seçim yapılmışsa
@@ -114,14 +115,18 @@ const App = () => {
     const processedTariffData = useMemo(() => {
         return rawTariffData.map(section => {
             // Section'a göre katsayı seç
-            const katsayi = activeCoefficients[section.id] || activeCoefficients.other;
-            const getIslemUcreti = () => GOSTERGE * katsayi;
-            const getIlaveUcret = () => ILAVE_GOSTERGE * katsayi;
+            const defaultKatsayi = activeCoefficients[section.id] || activeCoefficients.other;
 
             return {
                 ...section,
                 items: section.items.map(item => {
-                    let newItem = { ...item, coefficient: katsayi };
+                    // Item spesifik katsayı
+                    const usedKatsayi = itemCoefficients[item.code] !== undefined ? itemCoefficients[item.code] : defaultKatsayi;
+                    let newItem = { ...item, coefficient: usedKatsayi };
+
+                    // Helperlar (Artık item scope'unda)
+                    const getIslemUcreti = () => GOSTERGE * usedKatsayi;
+                    const getIlaveUcret = () => ILAVE_GOSTERGE * usedKatsayi;
 
                     // Formül enjeksiyonu
                     if (item.type === 'formula') {
@@ -135,11 +140,11 @@ const App = () => {
                     }
                     else if (item.type === 'kadastro_formula') {
                         newItem.type = 'formula'; // Convert to formula for uniform handling
-                        newItem.calc = (qty) => Math.max(MIN_KADASTRO_UCRETI, (item.basePrice * katsayi) * qty);
+                        newItem.calc = (qty) => Math.max(MIN_KADASTRO_UCRETI, (item.basePrice * usedKatsayi) * qty);
                     }
                     else if (item.type === 'fixed') {
                         // Sabit fiyatlı ürünleri de katsayı ile güncelle
-                        newItem.price = item.price * katsayi;
+                        newItem.price = item.price * usedKatsayi;
                     }
 
                     // Özel Fixler
@@ -151,10 +156,23 @@ const App = () => {
                 })
             };
         });
-    }, [activeCoefficients]);
+    }, [activeCoefficients, itemCoefficients]);
 
     // --- EFFECTS ---
 
+
+    // --- EFFECTS ---
+    // İlçe seçildiğinde, manuel katsayıyı (yoreselKatsayi) o ilçenin Tapu katsayısına eşitle.
+    // Bu sayede "Diğer" işlemler de ilçe katsayısını baz alır.
+    useEffect(() => {
+        if (selectedCity && selectedDistrict) {
+            const city = cities.find(c => c.name === selectedCity);
+            const dist = city?.districts.find(d => d.name === selectedDistrict);
+            if (dist) {
+                setYoreselKatsayi(dist.kv || 1);
+            }
+        }
+    }, [selectedCity, selectedDistrict, cities]);
 
     // --- HANDLERS ---
     const handleCityChange = (e) => {
@@ -188,6 +206,17 @@ const App = () => {
             else newQty[code] = valNum;
             return newQty;
         });
+    };
+
+    const handleItemCoefficientChange = (code, value) => {
+        const valStr = String(value);
+        if (valStr === '' || parseFloat(valStr) < 0) {
+            const newState = { ...itemCoefficients };
+            delete newState[code];
+            setItemCoefficients(newState);
+        } else {
+            setItemCoefficients(prev => ({ ...prev, [code]: parseFloat(valStr) }));
+        }
     };
 
     const formatCurrency = (value) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(value);
@@ -349,7 +378,7 @@ const App = () => {
 
                         {/* Katsayı Bilgileri */}
                         <div className="flex flex-wrap items-center gap-3 ml-auto">
-                            {isManualMode ? (
+                            {isManualMode && (!selectedCity || !selectedDistrict) ? (
                                 <div className="flex items-center gap-3 px-4 py-2 rounded-lg border shadow-sm bg-white border-amber-300 shadow-amber-100 ring-4 ring-amber-50">
                                     <span className="text-xs font-bold uppercase tracking-wider text-amber-600">Manuel Katsayı:</span>
                                     <div className="flex items-center gap-1">
@@ -447,9 +476,17 @@ const App = () => {
                                             <div className="flex justify-between items-center text-xs text-slate-500">
                                                 <span className="flex items-center gap-1">
                                                     {item.code} - {qty} {item.unit}
-                                                    <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 font-mono" title={`Kullanılan Katsayı: ${item.coefficient?.toFixed(2)}`}>
-                                                        KV:{item.coefficient?.toFixed(2)}
-                                                    </span>
+                                                    <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded px-1 group-hover:border-blue-200 transition-colors" title="Katsayıyı manuel değiştirmek için tıklayın">
+                                                        <span className="text-[10px] text-slate-400 font-mono">KV:</span>
+                                                        <input
+                                                            type="number"
+                                                            className={`w-10 bg-transparent text-[10px] font-mono outline-none text-right font-bold ${itemCoefficients[item.code] !== undefined ? 'text-amber-600' : 'text-slate-600'}`}
+                                                            value={itemCoefficients[item.code] !== undefined ? itemCoefficients[item.code] : item.coefficient}
+                                                            onChange={(e) => handleItemCoefficientChange(item.code, e.target.value)}
+                                                            step="0.01"
+                                                            min="0"
+                                                        />
+                                                    </div>
                                                 </span>
                                                 <span className="font-bold text-slate-800">{formatCurrency(total)}</span>
                                             </div>
