@@ -58,6 +58,7 @@ const App = () => {
     // coefficientType removed, logic is now automatic per section
     const [expandedSections, setExpandedSections] = useState({});
     const [quantities, setQuantities] = useState({});
+    const [highlightLocation, setHighlightLocation] = useState(false);
 
     // Manuel Mod Kontrolü: 1 (Tapu) ve 2 (Kadastro) dışındaki bölümlerden seçim yapılmışsa
     const isManualMode = useMemo(() => {
@@ -120,7 +121,7 @@ const App = () => {
             return {
                 ...section,
                 items: section.items.map(item => {
-                    let newItem = { ...item };
+                    let newItem = { ...item, coefficient: katsayi };
 
                     // Formül enjeksiyonu
                     if (item.type === 'formula') {
@@ -135,6 +136,10 @@ const App = () => {
                     else if (item.type === 'kadastro_formula') {
                         newItem.type = 'formula'; // Convert to formula for uniform handling
                         newItem.calc = (qty) => Math.max(MIN_KADASTRO_UCRETI, (item.basePrice * katsayi) * qty);
+                    }
+                    else if (item.type === 'fixed') {
+                        // Sabit fiyatlı ürünleri de katsayı ile güncelle
+                        newItem.price = item.price * katsayi;
                     }
 
                     // Özel Fixler
@@ -159,7 +164,31 @@ const App = () => {
     };
 
     const toggleSection = (id) => setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }));
-    const handleQtyChange = (code, val) => setQuantities(prev => ({ ...prev, [code]: parseFloat(val) || 0 }));
+    const handleQtyChange = (code, val) => {
+        const valNum = Math.max(0, parseFloat(val) || 0);
+
+        // Validasyon: Tapu (1) ve Kadastro (2) işlemleri için İl/İlçe seçimi zorunlu
+        // Miktar giriliyorsa (valNum > 0) ve yer seçilmemişse uyarı ver.
+        if (valNum > 0 && (!selectedCity || !selectedDistrict)) {
+            const section = rawTariffData.find(s => s.items.some(i => i.code === code));
+            if (section && (section.id === 1 || section.id === 2)) {
+                // Görsel uyarıyı tetikle
+                setHighlightLocation(true);
+                // 2 saniye sonra efekti kapat
+                setTimeout(() => setHighlightLocation(false), 2000);
+
+                alert("Lütfen önce İl ve İlçe seçiniz.\n\nTapu ve Kadastro harçları bölgeye göre hesaplanmaktadır.");
+                return;
+            }
+        }
+
+        setQuantities(prev => {
+            const newQty = { ...prev };
+            if (valNum === 0) delete newQty[code];
+            else newQty[code] = valNum;
+            return newQty;
+        });
+    };
 
     const formatCurrency = (value) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(value);
 
@@ -268,9 +297,9 @@ const App = () => {
                     {/* İl/İlçe Seçimi ve Manuel Mod Göstergesi */}
                     <div className={`w-full border p-3 rounded-xl flex flex-col md:flex-row items-center gap-4 transition-colors duration-300 ${isManualMode ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-100'}`}>
                         <div className="flex items-center gap-2 w-full md:w-auto">
-                            <MapPin size={16} className={isManualMode ? "text-amber-500" : "text-blue-500"} />
+                            <MapPin size={16} className={highlightLocation ? "text-red-500 animate-pulse" : (isManualMode ? "text-amber-500" : "text-blue-500")} />
                             <select
-                                className={`border text-sm rounded-lg p-2 outline-none transition-colors w-full md:w-auto ${isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200'}`}
+                                className={`border text-sm rounded-lg p-2 outline-none transition-all duration-300 w-full md:w-auto ${highlightLocation ? 'bg-red-50 text-red-700 border-red-400 ring-4 ring-red-100' : (isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200')}`}
                                 value={selectedCity}
                                 onChange={handleCityChange}
                             >
@@ -280,7 +309,7 @@ const App = () => {
                         </div>
                         <div className="flex items-center gap-2 w-full md:w-auto">
                             <select
-                                className={`border text-sm rounded-lg p-2 outline-none transition-colors w-full md:w-auto ${isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200'}`}
+                                className={`border text-sm rounded-lg p-2 outline-none transition-all duration-300 w-full md:w-auto ${highlightLocation ? 'bg-red-50 text-red-700 border-red-400 ring-4 ring-red-100' : (isManualMode ? 'bg-white text-slate-700 border-amber-200' : 'bg-white text-slate-700 border-blue-200 disabled:bg-slate-100')}`}
                                 value={selectedDistrict}
                                 onChange={(e) => setSelectedDistrict(e.target.value)}
                                 disabled={!selectedCity}
@@ -388,7 +417,12 @@ const App = () => {
                                                 <button onClick={() => handleQtyChange(item.code, 0)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
                                             </div>
                                             <div className="flex justify-between items-center text-xs text-slate-500">
-                                                <span>{item.code} - {qty} {item.unit}</span>
+                                                <span className="flex items-center gap-1">
+                                                    {item.code} - {qty} {item.unit}
+                                                    <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 font-mono" title={`Kullanılan Katsayı: ${item.coefficient?.toFixed(2)}`}>
+                                                        KV:{item.coefficient?.toFixed(2)}
+                                                    </span>
+                                                </span>
                                                 <span className="font-bold text-slate-800">{formatCurrency(total)}</span>
                                             </div>
                                         </div>
